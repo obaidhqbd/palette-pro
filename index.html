@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PalettePro - Advanced Color Palette Generator</title>
+  <style>
+    :root {
+      --bg-primary: #0f0f1a;
+      --bg-secondary: #1a1a2e;
+      --bg-card: #16213e;
+      --text-primary: #ffffff;
+      --text-secondary: #b0b0c0;
+      --accent: #6c63ff;
+      --accent-hover: #5a52e0;
+      --success: #00d9a5;
+      --warning: #ffc107;
+      --error: #ff6b6b;
+      --border: #2a2a4a;
+      --shadow: 0 10px 40px rgba(0,0,0,0.4);
+      --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== Header ===== */
+    header {
+      background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent), #9d8dff);
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      font-weight: bold;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    /* ===== Buttons ===== */
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: var(--transition);
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(108, 99, 255, 0.4);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--border);
+      color: var(--text-primary);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--accent);
+      background: rgba(108, 99, 255, 0.1);
+    }
+
+    .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    .btn-icon {
+      padding: 0.6rem;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+    }
+
+    /* ===== Main Layout ===== */
+    main {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 2rem;
+      padding: 2rem;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1100px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+      #previewPanel {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+        z-index: 90;
+        border-radius: var(--radius) var(--radius) 0 0;
+      }
+      #previewPanel.active {
+        transform: translateY(0);
+      }
+    }
+
+    /* ===== Category Filter ===== */
+    .category-filter {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: var(--bg-secondary);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .category-btn {
+      padding: 0.5rem 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .category-btn:hover,
+    .category-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    /* ===== Palette Grid ===== */
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .palettes-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .palette-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .palette-card:hover {
+      border-color: var(--accent);
+      box-shadow: var(--shadow);
+    }
+
+    .palette-colors {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      min-height: 120px;
+    }
+
+    @media (max-width: 600px) {
+      .palette-colors {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .color-box {
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 1rem;
+      transition: var(--transition);
+      aspect-ratio: 1;
+    }
+
+    .color-box:hover {
+      transform: scale(1.02);
+      z-index: 2;
+    }
+
+    .color-code {
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      backdrop-filter: blur(4px);
+    }
+
+    .palette-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+    }
+
+    .palette-info {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .palette-actions .btn-sm {
+      padding: 0.4rem 0.8rem;
+    }
+
+    .favorite-btn.active {
+      color: var(--error);
+    }
+
+    /* ===== Preview Panel ===== */
+    #previewPanel {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      position: sticky;
+      top: 100px;
+      height: fit-content;
+      box-shadow: var(--shadow);
+    }
+
+    .preview-title {
+      font-size: 1.2rem;
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .selected-color-preview {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-sm);
+      margin-bottom: 1.5rem;
+    }
+
+    .color-swatch {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      border: 3px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .color-details h4 {
+      font-size: 1.1rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .color-details code {
+      background: var(--bg-primary);
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+
+    .contrast-analysis {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .contrast-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .contrast-row:last-child {
+      border-bottom: none;
+    }
+
+    .contrast-label {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .contrast-value {
+      font-weight: 600;
+      font-family: monospace;
+    }
+
+    .wcag-badge {
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .wcag-pass {
+      background: rgba(0, 217, 165, 0.2);
+      color: var(--success);
+    }
+
+    .wcag-fail {
+      background: rgba(255, 107, 107, 0.2);
+      color: var(--error);
+    }
+
+    .suggested-text {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .suggested-text:hover {
+      transform: translateX(4px);
+      border-left: 3px solid var(--accent);
+    }
+
+    .text-preview {
+      width: 100%;
+      padding: 0.8rem;
+      border-radius: 8px;
+      font-weight: 600;
+      text-align: center;
+      font-size: 1.1rem;
+    }
+
+    /* ===== Tabs ===== */
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      background: var(--bg-secondary);
+      padding: 0.5rem;
+      border-radius: var(--radius-sm);
+      width: fit-content;
+    }
+
+    .tab-btn {
+      padding: 0.6rem 1.2rem;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: var(--transition);
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* ===== Toast Notification ===== */
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      padding: 1rem 2rem;
+      border-radius: 50px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      z-index: 1000;
+      transition: transform 0.3s ease;
+      border: 1px solid var(--border);
+    }
+
+    #toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    #toast.success {
+      border-left: 4px solid var(--success);
+    }
+
+    /* ===== Empty State ===== */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--text-secondary);
+    }
+
+    .empty-state svg {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+      }
+      .header-actions {
+        width: 100%;
+        justify-content: center;
+      }
+      main {
+        padding: 1rem;
+      }
+      .palette-colors {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    /* ===== Animations ===== */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .generating .palette-colors {
+      animation: pulse 0.8s ease-in-out;
+    }
+
+    /* ===== Scrollbar ===== */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--accent);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🎨</div>
+      <span>PalettePro</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" id="generateBtn">
+        <span>✨</span> Generate New
+      </button>
+      <button class="btn btn-icon" id="favoritesToggle" title="View Saved">
+        ⭐
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Left: Palette Generator -->
+    <section>
+      <!-- Category Filter -->
+      <div class="category-filter">
+        <button class="category-btn active" data-category="random">🎲 Random</button>
+        <button class="category-btn" data-category="pastel">🌸 Pastel</button>
+        <button class="category-btn" data-category="neon">💡 Neon</button>
+        <button class="category-btn" data-category="dark">🌙 Dark Mode</button>
+        <button class="category-btn" data-category="nature">🌿 Nature</button>
+        <button class="category-btn" data-category="cyberpunk">🤖 Cyberpunk</button>
+        <button class="category-btn" data-category="warm">🔥 Warm</button>
+        <button class="category-btn" data-category="cool">❄️ Cool</button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="generated">✨ Generated</button>
+        <button class="tab-btn" data-tab="saved">⭐ Saved Palettes</button>
+      </div>
+
+      <!-- Generated Palettes -->
+      <div id="generatedTab" class="tab-content active">
+        <div class="palettes-container" id="palettesList">
+          <!-- Palettes will be injected here -->
+        </div>
+      </div>
+
+      <!-- Saved Palettes -->
+      <div id="savedTab" class="tab-content">
+        <div class="palettes-container" id="savedList">
+          <div class="empty-state" id="savedEmpty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+            </svg>
+            <h3>No saved palettes yet</h3>
+            <p>Click the ⭐ button on any palette to save it</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: Preview Panel -->
+    <aside id="previewPanel">
+      <h3 class="preview-title">🔍 Color Analysis</h3>
+      
+      <div class="selected-color-preview" id="selectedPreview" style="display:none;">
+        <div class="color-swatch" id="previewSwatch"></div>
+        <div class="color-details">
+          <h4>Selected Color</h4>
+          <code id="previewCode">#000000</code>
+        </div>
+      </div>
+
+      <div class="contrast-analysis">
+        <div class="contrast-row">
+          <span class="contrast-label">Contrast Ratio</span>
+          <span class="contrast-value" id="contrastRatio">—</span>
+        </div>
+        <div class="contrast-row">
+          <span class="contrast-label">WCAG AA</span>
+          <span class="wcag-badge" id="wcagAA">—</span>
+        </div>
+        <div class="contrast-row">
+          <span class="contrast-label">WCAG AAA</span>
+          <span class="wcag-badge" id="wcagAAA">—</span>
+        </div>
+      </div>
+
+      <div class="suggested-text" id="suggestedText" style="display:none;" title="Click to copy">
+        <div class="text-preview" id="textPreview">Sample Text</div>
+        <div style="text-align:right;">
+          <div style="font-size:0.8rem;color:var(--text-secondary);">Suggested</div>
+          <code id="suggestedCode" style="font-size:0.85rem;">#FFFFFF</code>
+        </div>
+      </div>
+
+      <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);">
+        <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:0.5rem;">
+          💡 Tip: Click any color to copy its HEX code. Select a color to analyze text readability.
+        </p>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Toast Notification -->
+  <div id="toast">
+    <span>✓</span>
+    <span id="toastMessage">Copied to clipboard!</span>
+  </div>
+
+  <script>
+    /**
+     * ColorUtils - Enhanced color manipulation utilities with validation & best practices
+     */
+    const ColorUtils = {
+      /**
+       * Validates and normalizes hex color input
+       * @param {string} hex - Color in #RGB or #RRGGBB format
+       * @returns {string|null} Normalized 6-digit hex or null if invalid
+       */
+      normalizeHex: (hex) => {
+        if (!hex || typeof hex !== 'string') return null;
+        hex = hex.trim().toUpperCase();
+        if (!hex.startsWith('#')) hex = '#' + hex;
+        
+        // Handle 3-digit hex (#FFF -> #FFFFFF)
+        if (/^#([A-F0-9]{3})$/.test(hex)) {
+          return '#' + hex.slice(1).split('').map(c => c + c).join('');
+        }
+        // Validate 6-digit hex
+        if (/^#([A-F0-9]{6})$/.test(hex)) {
+          return hex;
+        }
+        return null;
+      },
+
+      /**
+       * Generate random hex color with proper padding
+       * @returns {string} Valid 6-digit hex color
+       */
+      randomHex: () => {
+        return '#' + Math.floor(Math.random() * 0xFFFFFF)
+          .toString(16)
+          .padStart(6, '0')
+          .toUpperCase();
+      },
+      
+      /**
+       * Parse hex to RGB object with validation
+       * @param {string} hex - Color in #RRGGBB format
+       * @returns {{r:number,g:number,b:number}|null} RGB values 0-255 or null
+       */
+      hexToRgb: (hex) => {
+        const normalized = ColorUtils.normalizeHex(hex);
+        if (!normalized) return null;
+        
+        const result = /^#?([A-F\d]{2})([A-F\d]{2})([A-F\d]{2})$/i.exec(normalized);
+        return result ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16)
+        } : null;
+      },
+
+      /**
+       * Convert RGB to hex
+       * @param {number} r - Red 0-255
+       * @param {number} g - Green 0-255
+       * @param {number} b - Blue 0-255
+       * @returns {string} Hex color #RRGGBB
+       */
+      rgbToHex: (r, g, b) => {
+        const clamp = (v) => Math.max(0, Math.min(255, Math.round(v)));
+        return '#' + [clamp(r), clamp(g), clamp(b)]
+          .map(v => v.toString(16).padStart(2, '0'))
+          .join('')
+          .toUpperCase();
+      },
+
+      /**
+       * Convert HSL to RGB using proper color science formula
+       * @param {number} h - Hue 0-360
+       * @param {number} s - Saturation 0-100
+       * @param {number} l - Lightness 0-100
+       * @returns {{r:number,g:number,b:number}} RGB values 0-255
+       */
+      hslToRgb: (h, s, l) => {
+        h = ((h % 360) + 360) % 360; // Normalize hue to 0-360
+        s = Math.max(0, Math.min(100, s)) / 100;
+        l = Math.max(0, Math.min(100, l)) / 100;
+        
+        const c = (1 - Math.abs(2 * l - 1)) * s;
+        const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+        const m = l - c / 2;
+        
+        let [r, g, b] = [0, 0, 0];
+        
+        if (h < 60) [r, g, b] = [c, x, 0];
+        else if (h < 120) [r, g, b] = [x, c, 0];
+        else if (h < 180) [r, g, b] = [0, c, x];
+        else if (h < 240) [r, g, b] = [0, x, c];
+        else if (h < 300) [r, g, b] = [x, 0, c];
+        else [r, g, b] = [c, 0, x];
+        
+        return {
+          r: Math.round((r + m) * 255),
+          g: Math.round((g + m) * 255),
+          b: Math.round((b + m) * 255)
+        };
+      },
+
+      /**
+       * Convert HSL to hex color
+       * @param {number} h - Hue 0-360
+       * @param {number} s - Saturation 0-100
+       * @param {number} l - Lightness 0-100
+       * @returns {string} Hex color #RRGGBB
+       */
+      hslToHex: (h, s, l) => {
+        const { r, g, b } = ColorUtils.hslToRgb(h, s, l);
+        return ColorUtils.rgbToHex(r, g, b);
+      },
+
+      /**
+       * Convert hex to HSL
+       * @param {string} hex - Color in #RRGGBB format
+       * @returns {{h:number,s:number,l:number}|null} HSL values or null
+       */
+      hexToHsl: (hex) => {
+        const rgb = ColorUtils.hexToRgb(hex);
+        if (!rgb) return null;
+        
+        const { r, g, b } = rgb;
+        const r1 = r / 255, g1 = g / 255, b1 = b / 255;
+        const max = Math.max(r1, g1, b1), min = Math.min(r1, g1, b1);
+        const d = max - min;
+        
+        let h = 0, s = 0, l = (max + min) / 2;
+        
+        if (d !== 0) {
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          switch (max) {
+            case r1: h = ((g1 - b1) / d + (g1 < b1 ? 6 : 0)) * 60; break;
+            case g1: h = ((b1 - r1) / d + 2) * 60; break;
+            case b1: h = ((r1 - g1) / d + 4) * 60; break;
+          }
+        }
+        
+        return {
+          h: Math.round(h),
+          s: Math.round(s * 100),
+          l: Math.round(l * 100)
+        };
+      },
+
+      /**
+       * Calculate relative luminance per WCAG 2.1 formula
+       * @param {string} hex - Color in #RRGGBB format
+       * @returns {number} Luminance value 0-1
+       */
+      getLuminance: (hex) => {
+        const rgb = ColorUtils.hexToRgb(hex);
+        if (!rgb) return 0;
+        
+        const [rs, gs, bs] = [rgb.r, rgb.g, rgb.b].map(c => {
+          const sRGB = c / 255;
+          return sRGB <= 0.03928 
+            ? sRGB / 12.92 
+            : Math.pow((sRGB + 0.055) / 1.055, 2.4);
+        });
+        
+        return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+      },
+
+      /**
+       * Calculate contrast ratio between two colors (WCAG formula)
+       * @param {string} hex1 - First color
+       * @param {string} hex2 - Second color
+       * @returns {string} Contrast ratio formatted to 2 decimals
+       */
+      getContrastRatio: (hex1, hex2) => {
+        const lum1 = ColorUtils.getLuminance(hex1);
+        const lum2 = ColorUtils.getLuminance(hex2);
+        const lighter = Math.max(lum1, lum2);
+        const darker = Math.min(lum1, lum2);
+        return ((lighter + 0.05) / (darker + 0.05)).toFixed(2);
+      },
+
+      /**
+       * Determine best contrasting text color with aesthetic fallbacks
+       * @param {string} bgHex - Background color
+       * @returns {string} Best text color (#FFFFFF, #000000, or #F8F8F8/#1A1A1A)
+       */
+      getBestTextColor: (bgHex) => {
+        const normalized = ColorUtils.normalizeHex(bgHex);
+        if (!normalized) return '#FFFFFF';
+        
+        const contrastWhite = ColorUtils.getContrastRatio(normalized, '#FFFFFF');
+        const contrastBlack = ColorUtils.getContrastRatio(normalized, '#000000');
+        const contrastOffWhite = ColorUtils.getContrastRatio(normalized, '#F8F8F8');
+        const contrastOffBlack = ColorUtils.getContrastRatio(normalized, '#1A1A1A');
+        
+        // Prefer pure white/black if they meet AAA, otherwise use aesthetic alternatives
+        if (contrastWhite >= 7) return '#FFFFFF';
+        if (contrastBlack >= 7) return '#000000';
+        if (contrastOffWhite > contrastWhite && contrastOffWhite >= 4.5) return '#F8F8F8';
+        if (contrastOffBlack > contrastBlack && contrastOffBlack >= 4.5) return '#1A1A1A';
+        
+        return contrastWhite > contrastBlack ? '#FFFFFF' : '#000000';
+      },
+
+      /**
+       * Check WCAG compliance levels for a contrast ratio
+       * @param {number|string} ratio - Contrast ratio
+       * @returns {Object} WCAG compliance flags
+       */
+      checkWCAG: (ratio) => {
+        const num = parseFloat(ratio);
+        if (isNaN(num)) return { aa: false, aaa: false, aaLarge: false, aaaLarge: false };
+        
+        return {
+          aa: num >= 4.5,        // Normal text AA
+          aaa: num >= 7,         // Normal text AAA
+          aaLarge: num >= 3,     // Large text (18pt+/14pt bold) AA
+          aaaLarge: num >= 4.5   // Large text AAA
+        };
+      },
+
+      /**
+       * Adjust color lightness while preserving hue/saturation
+       * @param {string} hex - Original color
+       * @param {number} delta - Lightness adjustment (-100 to +100)
+       * @returns {string} Adjusted hex color
+       */
+      adjustLightness: (hex, delta) => {
+        const hsl = ColorUtils.hexToHsl(hex);
+        if (!hsl) return hex;
+        
+        const newL = Math.max(0, Math.min(100, hsl.l + delta));
+        return ColorUtils.hslToHex(hsl.h, hsl.s, newL);
+      },
+
+      /**
+       * Adjust color saturation while preserving hue/lightness
+       * @param {string} hex - Original color
+       * @param {number} delta - Saturation adjustment (-100 to +100)
+       * @returns {string} Adjusted hex color
+       */
+      adjustSaturation: (hex, delta) => {
+        const hsl = ColorUtils.hexToHsl(hex);
+        if (!hsl) return hex;
+        
+        const newS = Math.max(0, Math.min(100, hsl.s + delta));
+        return ColorUtils.hslToHex(hsl.h, newS, hsl.l);
+      }
+    };
+
+    /**
+     * PaletteGenerators - Color theory-based palette generation with proper harmony rules
+     */
+    const PaletteGenerators = {
+      /**
+       * Generate harmonious colors using proper color wheel relationships
+       * @param {number} count - Number of colors (default: 5)
+       * @param {number|null} baseHue - Starting hue or null for random
+       * @param {string} scheme - Harmony scheme: 'complementary'|'analogous'|'triadic'|'tetradic'
+       * @returns {string[]} Array of hex colors
+       */
+      generateHarmonious: (count = 5, baseHue = null, scheme = 'complementary') => {
+        const colors = [];
+        const hue = baseHue ?? Math.floor(Math.random() * 360);
+        const baseSaturation = 55 + Math.random() * 25; // 55-80%
+        const baseLightness = 40 + Math.random() * 25;  // 40-65%
+        
+        // Define hue offsets based on color harmony scheme
+        const schemes = {
+          complementary: [0, 180],
+          analogous: [0, 30, 60, -30, -60],
+          triadic: [0, 120, 240, 60, 300],
+          tetradic: [0, 90, 180, 270, 45],
+          splitComplementary: [0, 150, 210, 30, 330]
+        };
+        
+        const offsets = schemes[scheme] || schemes.complementary;
+        
+        for (let i = 0; i < count; i++) {
+          const offset = offsets[i % offsets.length];
+          const h = (hue + offset + 360) % 360;
+          
+          // Add subtle variation to saturation/lightness for visual interest
+          const s = Math.max(40, Math.min(90, baseSaturation + (Math.random() - 0.5) * 15));
+          const l = Math.max(25, Math.min(75, baseLightness + (Math.random() - 0.5) * 20));
+          
+          colors.push(ColorUtils.hslToHex(h, s, l));
+        }
+        return colors;
+      },
+
+      /**
+       * Generate soft pastel palette with high lightness & moderate saturation
+       * @returns {string[]} Pastel hex colors
+       */
+      pastel: () => {
+        const baseHue = Math.floor(Math.random() * 360);
+        return PaletteGenerators.generateHarmonious(5, baseHue, 'analogous').map(hex => {
+          const hsl = ColorUtils.hexToHsl(hex);
+          if (!hsl) return hex;
+          // Pastel: high lightness (80-95%), moderate saturation (50-75%)
+          return ColorUtils.hslToHex(
+            hsl.h,
+            50 + Math.random() * 25,  // 50-75% saturation
+            82 + Math.random() * 13   // 82-95% lightness
+          );
+        });
+      },
+
+      /**
+       * Generate vibrant neon palette with high saturation & medium lightness
+       * @returns {string[]} Neon hex colors
+       */
+      neon: () => {
+        const hues = [320, 190, 280, 210, 340]; // Pink, cyan, purple, blue-violet, magenta
+        return hues.map((baseHue, i) => {
+          // Add slight randomization while keeping within neon range
+          const h = (baseHue + Math.floor(Math.random() * 25) - 12 + 360) % 360;
+          const s = 92 + Math.random() * 8;   // 92-100% saturation
+          const l = 48 + Math.random() * 14;  // 48-62% lightness for vibrancy
+          return ColorUtils.hslToHex(h, s, l);
+        });
+      },
+
+      /**
+       * Generate dark mode palette with deep tones & subtle accents
+       * @returns {string[]} Dark theme hex colors
+       */
+      dark: () => {
+        const baseHue = Math.floor(Math.random() * 60) + 200; // Blue-purple range
+        const darkBase = ColorUtils.hslToHex(baseHue, 25, 8);  // Very dark base
+        
+        // Generate harmonious dark colors with controlled variation
+        return [
+          darkBase,
+          ColorUtils.hslToHex(baseHue, 30, 15),
+          ColorUtils.hslToHex((baseHue + 30) % 360, 35, 22),
+          ColorUtils.hslToHex((baseHue + 180) % 360, 40, 35), // Complementary accent
+          ColorUtils.hslToHex((baseHue + 180) % 360, 55, 55)  // Brighter accent
+        ];
+      },
+
+      /**
+       * Generate nature-inspired earth tone palette
+       * @returns {string[]} Nature-themed hex colors
+      */
+      nature: () => {
+        // Pre-defined harmonious nature palettes with proper color theory
+        const palettes = [
+          // Forest
+          ['#1B4332', '#2D6A4F', '#40916C', '#74C69D', '#B7E4C7'],
+          // Sunset
+          ['#6A040F', '#9D0208', '#D00000', '#DC2F02', '#E85D04'],
+          // Ocean
+          ['#03045E', '#0077B6', '#00B4D8', '#90E0EF', '#CAF0F8'],
+          // Desert
+          ['#774936', '#9C6644', '#C48B5E', '#E6B89C', '#F5E6D3'],
+          // Meadow
+          ['#283618', '#4A5D23', '#6A7C43', '#A6B972', '#D4E6A0']
+        ];
+        
+        // Return random palette with slight randomization for variety
+        const basePalette = palettes[Math.floor(Math.random() * palettes.length)];
+        return basePalette.map(hex => {
+          // Add ±5% lightness variation for organic feel
+          return ColorUtils.adjustLightness(hex, Math.floor(Math.random() * 11) - 5);
+        });
+      },
+
+      /**
+       * Generate cyberpunk/neon-noir palette with electric accents
+       * @returns {string[]} Cyberpunk-themed hex colors
+       */
+      cyberpunk: () => {
+        const baseDark = '#0A001A';
+        const accentHues = [330, 270, 200, 170]; // Pink, purple, blue, cyan
+        
+        return [
+          baseDark,
+          ...accentHues.map((hue, i) => {
+            // High saturation, medium-high lightness for neon glow effect
+            return ColorUtils.hslToHex(
+              hue + Math.floor(Math.random() * 20) - 10,
+              88 + Math.random() * 12,  // 88-100% saturation
+              50 + Math.random() * 15   // 50-65% lightness
+            );
+          })
+        ];
+      },
+
+      /**
+       * Generate warm palette (reds, oranges, yellows)
+       * @returns {string[]} Warm-toned hex colors
+       */
+      warm: () => {
+        const baseHue = 20 + Math.floor(Math.random() * 40); // 20-60° (orange-red range)
+        return PaletteGenerators.generateHarmonious(5, baseHue, 'analogous').map(hex => {
+          const hsl = ColorUtils.hexToHsl(hex);
+          if (!hsl) return hex;
+          // Ensure warm tones stay in red-yellow spectrum
+          const h = (10 + Math.random() * 50) % 360;
+          const s = 55 + Math.random() * 35;  // 55-90% saturation
+          const l = 40 + Math.random() * 35;  // 40-75% lightness
+          return ColorUtils.hslToHex(h, s, l);
+        });
+      },
+
+      /**
+       * Generate cool palette (blues, greens, purples)
+       * @returns {string[]} Cool-toned hex colors
+       */
+      cool: () => {
+        const baseHue = 180 + Math.floor(Math.random() * 120); // 180-300° (cyan-purple)
+        return PaletteGenerators.generateHarmonious(5, baseHue, 'analogous').map(hex => {
+          const hsl = ColorUtils.hexToHsl(hex);
+          if (!hsl) return hex;
+          // Ensure cool tones stay in cyan-purple spectrum
+          const h = (170 + Math.random() * 140) % 360;
+          const s = 45 + Math.random() * 40;  // 45-85% saturation
+          const l = 35 + Math.random() * 40;  // 35-75% lightness
+          return ColorUtils.hslToHex(h, s, l);
+        });
+      },
+
+      /**
+       * Generate minimal monochrome palette with single accent
+       * @returns {string[]} Minimal grayscale + accent colors
+       */
+      minimal: () => {
+        // Carefully selected grayscale with proper contrast steps
+        const grays = ['#F8F9FA', '#E9ECEF', '#DEE2E6', '#6C757D', '#212529'];
+        // Generate accent using proper saturation/lightness for accessibility
+        const accentHue = Math.floor(Math.random() * 360);
+        const accent = ColorUtils.hslToHex(accentHue, 65, 52); // Accessible saturation/lightness
+        return [...grays.slice(0, 4), accent];
+      },
+
+      /**
+       * Generate smooth gradient palette with perceptual uniformity
+       * @returns {string[]} Gradient hex colors
+       */
+      gradient: () => {
+        const startHue = Math.floor(Math.random() * 360);
+        const colors = [];
+        
+        for (let i = 0; i < 5; i++) {
+          const progress = i / 4;
+          // Smooth hue transition with perceptual adjustments
+          const h = (startHue + progress * 72) % 360;
+          // Ease saturation/lightness for natural gradient feel
+          const s = 55 + Math.sin(progress * Math.PI) * 35;  // 55-90%
+          const l = 45 + Math.cos(progress * Math.PI) * 25;  // 20-70%
+          
+          colors.push(ColorUtils.hslToHex(
+            h, 
+            Math.max(40, Math.min(95, s)), 
+            Math.max(20, Math.min(80, l))
+          ));
+        }
+        return colors;
+      },
+
+      /**
+       * Main generator dispatcher with category validation
+       * @param {string} category - Palette category
+       * @returns {string[]} Generated palette colors
+       */
+      generate: (category = 'random') => {
+        const validCategories = [
+          'pastel', 'neon', 'dark', 'nature', 
+          'cyberpunk', 'warm', 'cool', 'minimal', 'gradient'
+        ];
+        
+        // Handle random category selection
+        if (category === 'random' || !validCategories.includes(category)) {
+          category = validCategories[Math.floor(Math.random() * validCategories.length)];
+        }
+        
+        // Call generator with error fallback
+        try {
+          return PaletteGenerators[category]?.() ?? 
+                 PaletteGenerators.generateHarmonious();
+        } catch (error) {
+          console.warn(`Palette generation failed for ${category}:`, error);
+          return PaletteGenerators.generateHarmonious(); // Fallback
+        }
+      }
+    };
+
+    // ===== App State =====
+    const AppState = {
+      selectedColor: null,
+      favorites: JSON.parse(localStorage.getItem('palettePro_favorites') || '[]'),
+      currentCategory: 'random'
+    };
+
+    // ===== DOM Elements =====
+    const DOM = {
+      palettesList: document.getElementById('palettesList'),
+      savedList: document.getElementById('savedList'),
+      savedEmpty: document.getElementById('savedEmpty'),
+      generateBtn: document.getElementById('generateBtn'),
+      categoryBtns: document.querySelectorAll('.category-btn'),
+      tabBtns: document.querySelectorAll('.tab-btn'),
+      previewPanel: document.getElementById('previewPanel'),
+      previewSwatch: document.getElementById('previewSwatch'),
+      previewCode: document.getElementById('previewCode'),
+      contrastRatio: document.getElementById('contrastRatio'),
+      wcagAA: document.getElementById('wcagAA'),
+      wcagAAA: document.getElementById('wcagAAA'),
+      suggestedText: document.getElementById('suggestedText'),
+      textPreview: document.getElementById('textPreview'),
+      suggestedCode: document.getElementById('suggestedCode'),
+      selectedPreview: document.getElementById('selectedPreview'),
+      toast: document.getElementById('toast'),
+      toastMessage: document.getElementById('toastMessage'),
+      favoritesToggle: document.getElementById('favoritesToggle')
+    };
+
+    // ===== Core Functions =====
+    function createPaletteCard(colors, category, isSaved = false) {
+      // Validate colors array
+      if (!Array.isArray(colors) || colors.length === 0) {
+        console.warn('Invalid colors array for palette card');
+        colors = ['#6C63FF', '#5A52E0', '#4A44C0', '#3A36A0', '#2A2A80'];
+      }
+      
+      // Ensure all colors are valid hex
+      const validColors = colors.map(c => ColorUtils.normalizeHex(c) || '#6C63FF');
+      
+      const card = document.createElement('div');
+      card.className = 'palette-card';
+      card.dataset.colors = validColors.join(',');
+      
+      const colorsHtml = validColors.map(color => `
+        <div class="color-box" style="background:${color}" 
+             data-color="${color}" 
+             title="Click to copy ${color}">
+          <span class="color-code">${color}</span>
+        </div>
+      `).join('');
+
+      const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
+      const isFavorite = AppState.favorites.some(f => 
+        f.colors.join(',') === validColors.join(',')
+      );
+
+      card.innerHTML = `
+        <div class="palette-colors">${colorsHtml}</div>
+        <div class="palette-actions">
+          <span class="palette-info">${categoryName} • ${validColors.length} colors</span>
+          <div style="display:flex;gap:0.5rem;">
+            <button class="btn btn-sm btn-outline copy-all-btn" title="Copy all colors">
+              📋 Copy All
+            </button>
+            <button class="btn btn-sm btn-icon favorite-btn ${isFavorite ? 'active' : ''}" 
+                    title="${isFavorite ? 'Remove from favorites' : 'Save to favorites'}">
+              ${isFavorite ? '⭐' : '☆'}
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Event listeners with proper delegation
+      card.querySelectorAll('.color-box').forEach(box => {
+        box.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const color = box.dataset.color;
+          copyToClipboard(color);
+          selectColorForAnalysis(color);
+        });
+      });
+
+      const favoriteBtn = card.querySelector('.favorite-btn');
+      if (favoriteBtn) {
+        favoriteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleFavorite(validColors, category, card, e.currentTarget);
+        });
+      }
+
+      const copyAllBtn = card.querySelector('.copy-all-btn');
+      if (copyAllBtn) {
+        copyAllBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          copyAllColors(validColors);
+        });
+      }
+
+      return card;
+    }
+
+    function generateAndDisplay(count = 3) {
+      if (!DOM.palettesList) return;
+      
+      DOM.palettesList.innerHTML = '';
+      DOM.palettesList.parentElement?.classList.add('generating');
+      
+      // Use setTimeout for non-blocking UI update
+      setTimeout(() => {
+        for (let i = 0; i < count; i++) {
+          try {
+            const colors = PaletteGenerators.generate(AppState.currentCategory);
+            const card = createPaletteCard(colors, AppState.currentCategory);
+            DOM.palettesList.appendChild(card);
+          } catch (error) {
+            console.error('Error generating palette:', error);
+            // Fallback palette
+            const fallback = PaletteGenerators.generateHarmonious();
+            const card = createPaletteCard(fallback, 'random');
+            DOM.palettesList.appendChild(card);
+          }
+        }
+        DOM.palettesList.parentElement?.classList.remove('generating');
+      }, 300);
+    }
+
+    function displaySavedPalettes() {
+      if (!DOM.savedList) return;
+      
+      DOM.savedList.innerHTML = '';
+      
+      if (!AppState.favorites || AppState.favorites.length === 0) {
+        if (DOM.savedEmpty) {
+          DOM.savedList.appendChild(DOM.savedEmpty);
+        }
+        return;
+      }
+
+      AppState.favorites.forEach(fav => {
+        // Validate saved palette data
+        if (fav?.colors && Array.isArray(fav.colors)) {
+          const card = createPaletteCard(fav.colors, fav.category || 'saved', true);
+          DOM.savedList.appendChild(card);
+        }
+      });
+    }
+
+    function toggleFavorite(colors, category, card, btn) {
+      if (!colors || !Array.isArray(colors)) return;
+      
+      const key = colors.join(',');
+      const index = AppState.favorites.findIndex(f => 
+        f.colors?.join(',') === key
+      );
+      
+      if (index === -1) {
+        AppState.favorites.push({ 
+          colors: [...colors], 
+          category, 
+          savedAt: Date.now() 
+        });
+        if (btn) {
+          btn.textContent = '⭐';
+          btn.classList.add('active');
+        }
+        showToast('Saved to favorites! ✨', 'success');
+      } else {
+        AppState.favorites.splice(index, 1);
+        if (btn) {
+          btn.textContent = '☆';
+          btn.classList.remove('active');
+        }
+        showToast('Removed from favorites', 'success');
+      }
+      
+      // Persist to localStorage with error handling
+      try {
+        localStorage.setItem('palettePro_favorites', JSON.stringify(AppState.favorites));
+      } catch (e) {
+        console.warn('Failed to save favorites to localStorage:', e);
+      }
+      
+      // Refresh saved tab if visible
+      if (document.querySelector('[data-tab="saved"].active')) {
+        displaySavedPalettes();
+      }
+    }
+
+    function selectColorForAnalysis(color) {
+      const normalized = ColorUtils.normalizeHex(color);
+      if (!normalized) return;
+      
+      AppState.selectedColor = normalized;
+      
+      // Update preview panel
+      if (DOM.selectedPreview) DOM.selectedPreview.style.display = 'flex';
+      if (DOM.previewSwatch) DOM.previewSwatch.style.background = normalized;
+      if (DOM.previewCode) DOM.previewCode.textContent = normalized;
+      
+      // Calculate contrast with best text color
+      const bestText = ColorUtils.getBestTextColor(normalized);
+      const ratio = ColorUtils.getContrastRatio(normalized, bestText);
+      const wcag = ColorUtils.checkWCAG(ratio);
+      
+      // Update analysis display with proper formatting
+      if (DOM.contrastRatio) DOM.contrastRatio.textContent = ratio + ':1';
+      
+      if (DOM.wcagAA) {
+        DOM.wcagAA.textContent = wcag.aa ? '✓ Pass' : '✗ Fail';
+        DOM.wcagAA.className = 'wcag-badge ' + (wcag.aa ? 'wcag-pass' : 'wcag-fail');
+      }
+      
+      if (DOM.wcagAAA) {
+        DOM.wcagAAA.textContent = wcag.aaa ? '✓ Pass' : '✗ Fail';
+        DOM.wcagAAA.className = 'wcag-badge ' + (wcag.aaa ? 'wcag-pass' : 'wcag-fail');
+      }
+      
+      // Show suggested text with proper contrast
+      if (DOM.suggestedText) DOM.suggestedText.style.display = 'flex';
+      if (DOM.textPreview) {
+        DOM.textPreview.style.background = normalized;
+        DOM.textPreview.style.color = bestText;
+      }
+      if (DOM.suggestedCode) {
+        DOM.suggestedCode.textContent = bestText;
+        DOM.suggestedCode.style.color = ColorUtils.getBestTextColor(bestText);
+      }
+      
+      // Mobile: show panel
+      if (window.innerWidth < 1100 && DOM.previewPanel) {
+        DOM.previewPanel.classList.add('active');
+      }
+    }
+
+    function copyToClipboard(text) {
+      if (!text) return;
+      
+      // Modern clipboard API with fallback
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast(`Copied ${text} to clipboard! ✓`, 'success');
+        }).catch(() => {
+          fallbackCopy(text);
+        });
+      } else {
+        fallbackCopy(text);
+      }
+    }
+    
+    function fallbackCopy(text) {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const success = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        
+        if (success) {
+          showToast(`Copied ${text} ✓`, 'success');
+        } else {
+          showToast('Copy failed - select text manually', 'error');
+        }
+      } catch (e) {
+        console.warn('Clipboard fallback failed:', e);
+        showToast('Copy not supported in this browser', 'error');
+      }
+    }
+
+    function copyAllColors(colors) {
+      if (!colors || !Array.isArray(colors)) return;
+      const validColors = colors.map(c => ColorUtils.normalizeHex(c)).filter(Boolean);
+      if (validColors.length === 0) return;
+      
+      const text = validColors.join(', ');
+      copyToClipboard(text);
+    }
+
+    function showToast(message, type = 'success') {
+      if (!DOM.toast || !DOM.toastMessage) return;
+      
+      DOM.toastMessage.textContent = message;
+      DOM.toast.className = ''; // Reset classes
+      DOM.toast.classList.add(type, 'show');
+      
+      // Clear existing timeout if any
+      if (DOM.toast._timeout) {
+        clearTimeout(DOM.toast._timeout);
+      }
+      
+      // Auto-hide after delay
+      DOM.toast._timeout = setTimeout(() => {
+        DOM.toast.classList.remove('show');
+      }, 2500);
+    }
+
+    // ===== Event Listeners =====
+    function setupEventListeners() {
+      // Generate button
+      if (DOM.generateBtn) {
+        DOM.generateBtn.addEventListener('click', () => {
+          if (document.querySelector('[data-tab="generated"].active')) {
+            generateAndDisplay();
+          }
+        });
+      }
+
+      // Category buttons with proper delegation
+      DOM.categoryBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          DOM.categoryBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          AppState.currentCategory = btn.dataset.category || 'random';
+          generateAndDisplay();
+        });
+      });
+
+      // Tab switching
+      DOM.tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          DOM.tabBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          
+          document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+          });
+          
+          const tabId = `${btn.dataset.tab}Tab`;
+          const targetTab = document.getElementById(tabId);
+          if (targetTab) {
+            targetTab.classList.add('active');
+          }
+          
+          if (btn.dataset.tab === 'saved') {
+            displaySavedPalettes();
+          }
+          
+          // Hide mobile preview panel when switching tabs
+          if (DOM.previewPanel) {
+            DOM.previewPanel.classList.remove('active');
+          }
+        });
+      });
+
+      // Suggested text copy
+      if (DOM.suggestedText) {
+        DOM.suggestedText.addEventListener('click', () => {
+          if (AppState.selectedColor) {
+            const bestText = ColorUtils.getBestTextColor(AppState.selectedColor);
+            copyToClipboard(bestText);
+          }
+        });
+      }
+
+      // Favorites toggle (mobile)
+      if (DOM.favoritesToggle) {
+        DOM.favoritesToggle.addEventListener('click', () => {
+          DOM.tabBtns.forEach(b => b.classList.remove('active'));
+          if (DOM.tabBtns[1]) DOM.tabBtns[1].classList.add('active');
+          
+          document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+          });
+          
+          const savedTab = document.getElementById('savedTab');
+          if (savedTab) {
+            savedTab.classList.add('active');
+            displaySavedPalettes();
+          }
+        });
+      }
+
+      // Close preview panel on outside click (mobile)
+      document.addEventListener('click', (e) => {
+        if (window.innerWidth < 1100 && 
+            DOM.previewPanel && 
+            !DOM.previewPanel.contains(e.target) && 
+            !e.target.closest?.('.color-box')) {
+          DOM.previewPanel.classList.remove('active');
+        }
+      });
+
+      // Keyboard shortcuts with proper target checking
+      document.addEventListener('keydown', (e) => {
+        // Only trigger if not typing in an input
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        
+        if (e.key === ' ' && e.target === document.body) {
+          e.preventDefault();
+          if (document.querySelector('[data-tab="generated"].active')) {
+            generateAndDisplay();
+          }
+        }
+        if (e.key === 'Escape' && DOM.previewPanel) {
+          DOM.previewPanel.classList.remove('active');
+        }
+      });
+
+      // Handle window resize for mobile panel
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          if (window.innerWidth >= 1100 && DOM.previewPanel) {
+            DOM.previewPanel.classList.remove('active');
+          }
+        }, 150);
+      });
+    }
+
+    // ===== Initialize =====
+    function init() {
+      // Ensure DOM is ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupAndStart);
+      } else {
+        setupAndStart();
+      }
+    }
+    
+    function setupAndStart() {
+      setupEventListeners();
+      generateAndDisplay();
+      
+      // Show welcome toast after brief delay
+      setTimeout(() => {
+        showToast('🎨 Welcome! Press SPACE to generate new palettes', 'success');
+      }, 1000);
+    }
+
+    // Start the app
+    init();
+  </script>
+</body>
+</html>
